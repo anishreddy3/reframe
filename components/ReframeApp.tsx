@@ -39,7 +39,7 @@ export function ReframeApp({ user, signOutPath }: { user: User; signOutPath: str
   async function signOut() {
     if (user.authMethod === "judge") {
       await fetch("/api/judge-auth", { method: "DELETE" });
-      window.location.assign("/judge-access");
+      window.location.assign("/");
       return;
     }
     window.location.assign(signOutPath);

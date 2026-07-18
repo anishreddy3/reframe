@@ -23,7 +23,7 @@ export default function JudgeAccess() {
       });
       const payload = (await response.json()) as { error?: string };
       if (!response.ok) throw new Error(payload.error || "Evaluator sign-in failed.");
-      window.location.assign("/");
+      window.location.assign("/app");
     } catch (cause) {
       setError(cause instanceof Error ? cause.message : "Evaluator sign-in failed.");
       setLoading(false);

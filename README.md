@@ -36,17 +36,18 @@ These credentials are intentionally published for challenge evaluation only. The
 
 ## User flow
 
-1. The hosted dispatcher authenticates a regular user with Sign in with ChatGPT, or the evaluator route verifies the temporary judge credentials and creates a signed cookie.
-2. Every server request derives an opaque D1 owner key from the verified identity. The browser never chooses which user records are loaded.
-3. A new user describes a habit, selects its frequency, and chooses whether to reduce or quit.
-4. The server sanitizes the input and checks it for safety concerns.
-5. If the input is safe for coaching, OpenAI returns a habit classification and personalized starting plan.
-6. The profile and generated plan are saved in the authenticated user’s D1 scope.
-7. Daily check-ins update the dashboard using stored values only.
-8. The coach receives the current message, compact profile context, and up to 10 recent check-ins belonging to that user.
-9. Strategy questions can be sent to Exa neural search for linked evidence sources.
-10. Account controls allow a JSON export or permanent deletion of the current user’s Reframe records.
-11. Crisis-related language bypasses ordinary coaching and displays professional support resources.
+1. The public home page asks the visitor to choose **Regular user** or **Evaluator**.
+2. The hosted dispatcher authenticates a regular user with Sign in with ChatGPT, or the evaluator route verifies the temporary judge credentials and creates a signed cookie.
+3. Every server request derives an opaque D1 owner key from the verified identity. The browser never chooses which user records are loaded.
+4. A new user describes a habit, selects its frequency, and chooses whether to reduce or quit.
+5. The server sanitizes the input and checks it for safety concerns.
+6. If the input is safe for coaching, OpenAI returns a habit classification and personalized starting plan.
+7. The profile and generated plan are saved in the authenticated user’s D1 scope.
+8. Daily check-ins update the dashboard using stored values only.
+9. The coach receives the current message, compact profile context, and up to 10 recent check-ins belonging to that user.
+10. Strategy questions can be sent to Exa neural search for linked evidence sources.
+11. Account controls allow a JSON export or permanent deletion of the current user’s Reframe records.
+12. Crisis-related language bypasses ordinary coaching and displays professional support resources.
 
 ## Architecture
 
@@ -405,19 +406,20 @@ npm run db:generate
 
 ### Manual evaluator walkthrough
 
-1. Open the main production URL in a signed-out browser and confirm it redirects to Sign in with ChatGPT.
-2. Alternatively, open `/judge-access`, enter the README credentials, and confirm the app opens without exposing the password in browser storage or the URL.
-3. Start with an empty authenticated account and confirm the dashboard contains no fabricated data.
-4. Complete onboarding with a non-crisis sample habit and verify the returned classification and plan are personalized.
-5. Log a check-in and verify the streak, average urges, chart, triggers, and time-of-day pattern use the submitted values.
-6. Reload the page and verify the profile and check-in persist for the same identity.
-7. Ask the coach about a logged trigger and verify the response is labeled with the actual model identifier.
-8. Search for an evidence-based strategy, open returned source links, then repeat the query and verify the scoped cache is consistent.
-9. Open Account & privacy, download the JSON export, and verify it contains only the current account’s profile/check-ins and no internal owner key.
-10. Sign out and confirm protected routes are inaccessible. Sign in as a different user and confirm the first user’s data is absent.
-11. Use clearly crisis-related synthetic test language and verify Reframe shows escalation resources instead of coaching.
-12. Type `DELETE` in Account & privacy, delete the data, and confirm onboarding is shown again while another account remains unaffected.
-13. Temporarily remove a development API key and verify the UI displays an error rather than a canned response.
+1. Open the main production URL and confirm the Regular user / Evaluator chooser is visible without authentication.
+2. Choose Regular user and confirm `/app` redirects to Sign in with ChatGPT; return and choose Evaluator to open `/judge-access`.
+3. Enter the README evaluator credentials and confirm the app opens without exposing the password in browser storage or the URL.
+4. Start with an empty authenticated account and confirm the dashboard contains no fabricated data.
+5. Complete onboarding with a non-crisis sample habit and verify the returned classification and plan are personalized.
+6. Log a check-in and verify the streak, average urges, chart, triggers, and time-of-day pattern use the submitted values.
+7. Reload the page and verify the profile and check-in persist for the same identity.
+8. Ask the coach about a logged trigger and verify the response is labeled with the actual model identifier.
+9. Search for an evidence-based strategy, open returned source links, then repeat the query and verify the scoped cache is consistent.
+10. Open Account & privacy, download the JSON export, and verify it contains only the current account’s profile/check-ins and no internal owner key.
+11. Sign out and confirm the chooser returns. Visit `/app` directly and confirm protected access redirects to ChatGPT sign-in.
+12. Use clearly crisis-related synthetic test language and verify Reframe shows escalation resources instead of coaching.
+13. Type `DELETE` in Account & privacy, delete the data, and confirm onboarding is shown again while another account remains unaffected.
+14. Temporarily remove a development API key and verify the UI displays an error rather than a canned response.
 
 Do not use a real crisis disclosure as test data. Use an obviously synthetic phrase in an isolated development session.
 
