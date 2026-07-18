@@ -1,12 +1,38 @@
 "use client";
 
 import { FormEvent, useState } from "react";
+import ReactMarkdown from "react-markdown";
+import remarkGfm from "remark-gfm";
 import { requestJson } from "../lib/client-http";
 import type { ResearchSource } from "../lib/types";
 import { EscalationCard } from "./EscalationCard";
 
 type Message = { id: string; role: "user" | "coach"; content: string; model?: string };
 type Escalation = Parameters<typeof EscalationCard>[0]["escalation"];
+
+function CoachMessage({ content }: { content: string }) {
+  return (
+    <div className="message-markdown">
+      <ReactMarkdown
+        remarkPlugins={[remarkGfm]}
+        components={{
+          // Keep model-authored headings inside the page's existing heading hierarchy.
+          h1: ({ children }) => <h3>{children}</h3>,
+          h2: ({ children }) => <h3>{children}</h3>,
+          h3: ({ children }) => <h3>{children}</h3>,
+          a: ({ children, href }) => (
+            <a href={href} target="_blank" rel="noopener noreferrer">
+              {children}
+              <span className="sr-only"> (opens in a new tab)</span>
+            </a>
+          ),
+        }}
+      >
+        {content}
+      </ReactMarkdown>
+    </div>
+  );
+}
 
 export function CoachView() {
   const [messages, setMessages] = useState<Message[]>([]);
@@ -79,7 +105,7 @@ export function CoachView() {
           {messages.map((message) => (
             <article key={message.id} className={`message ${message.role}`}>
               <small>{message.role === "user" ? "You" : "Reframe coach"}</small>
-              <p>{message.content}</p>
+              {message.role === "coach" ? <CoachMessage content={message.content} /> : <p>{message.content}</p>}
               {message.model && <span className="model-tag">Generated live · {message.model}</span>}
             </article>
           ))}

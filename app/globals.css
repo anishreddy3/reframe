@@ -199,9 +199,22 @@ legend { margin-bottom: 9px; }
 .chat-empty p { font: 18px/1.5 Georgia, serif; }
 .message { max-width: 85%; padding: 16px 18px; }
 .message small { display: block; margin-bottom: 5px; color: #87928c; font-size: 9px; font-weight: 750; letter-spacing: .1em; text-transform: uppercase; }
-.message p { margin: 0; white-space: pre-wrap; line-height: 1.6; font-size: 14px; }
+.message p { margin: 0; line-height: 1.6; font-size: 14px; }
+.message.user p { white-space: pre-wrap; }
 .message.user { align-self: flex-end; background: var(--sage); }
 .message.coach { align-self: flex-start; border-left: 3px solid var(--peach); background: #faf7ef; }
+.message-markdown > :first-child { margin-top: 0; }
+.message-markdown > :last-child { margin-bottom: 0; }
+.message-markdown p { margin: 0 0 10px; }
+.message-markdown h3 { margin: 14px 0 7px; font: 650 14px/1.4 var(--font-geist-sans), sans-serif; }
+.message-markdown ul, .message-markdown ol { margin: 8px 0 12px; padding-left: 22px; }
+.message-markdown li { margin: 6px 0; line-height: 1.55; font-size: 14px; }
+.message-markdown li > p { margin: 0; }
+.message-markdown blockquote { margin: 10px 0; padding-left: 12px; border-left: 2px solid var(--sage-dark); color: var(--muted); }
+.message-markdown a { color: var(--moss-dark); text-decoration-thickness: 1px; text-underline-offset: 2px; }
+.message-markdown code { padding: 1px 4px; border-radius: 3px; background: #ebe9df; font: .9em var(--font-geist-mono), monospace; }
+.message-markdown table { display: block; overflow-x: auto; max-width: 100%; border-collapse: collapse; font-size: 12px; }
+.message-markdown th, .message-markdown td { padding: 6px 8px; border: 1px solid var(--line); text-align: left; }
 .loading-message { color: var(--muted); font-style: italic; }
 .model-tag { display: block; margin-top: 10px; color: #929b96; font-size: 9px; }
 .chat-form { position: relative; }
