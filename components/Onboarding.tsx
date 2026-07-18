@@ -2,6 +2,7 @@
 
 import { FormEvent, useState } from "react";
 import { EscalationCard } from "./EscalationCard";
+import { requestJson } from "../lib/client-http";
 import type { Profile } from "../lib/types";
 
 type Props = { userDisplayName: string; onComplete: (profile: Profile) => void; onSignOut: () => void };
@@ -20,13 +21,15 @@ export function Onboarding({ userDisplayName, onComplete, onSignOut }: Props) {
     setError("");
     setEscalation(null);
     try {
-      const response = await fetch("/api/profile", {
+      const data = await requestJson<{
+        error?: string;
+        escalation?: Parameters<typeof EscalationCard>[0]["escalation"];
+        profile?: Profile;
+      }>("/api/profile", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ habitDescription, severity, goal }),
-      });
-      const data = (await response.json()) as { error?: string; escalation?: Parameters<typeof EscalationCard>[0]["escalation"]; profile?: Profile };
-      if (!response.ok || data.error) throw new Error(data.error || "Onboarding failed.");
+      }, "Onboarding failed.");
       if (data.escalation) {
         setEscalation(data.escalation);
         return;
@@ -41,8 +44,8 @@ export function Onboarding({ userDisplayName, onComplete, onSignOut }: Props) {
   }
 
   return (
-    <main className="onboarding-shell">
-      <header className="onboarding-header"><span className="brand-lockup"><span className="brand-mark">R</span><span>reframe</span></span><span className="onboarding-account"><span className="signed-in-note">Signed in as {userDisplayName}</span><button onClick={onSignOut}>Sign out</button></span></header>
+    <main id="main-content" tabIndex={-1} className="onboarding-shell">
+      <header className="onboarding-header"><span className="brand-lockup"><span className="brand-mark">R</span><span>reframe</span></span><span className="onboarding-account"><span className="signed-in-note">Signed in as {userDisplayName}</span><button type="button" onClick={onSignOut}>Sign out</button></span></header>
       <div className="onboarding-grid">
         <section className="onboarding-copy">
           <p className="eyebrow">Change the pattern, not who you are</p>
@@ -55,7 +58,7 @@ export function Onboarding({ userDisplayName, onComplete, onSignOut }: Props) {
           <div className="step-count">01 <span>/ 01</span></div>
           <p className="eyebrow">Begin with what is true today</p>
           <h2 id="start-title">What pattern would you like to shift?</h2>
-          <form onSubmit={submit}>
+          <form onSubmit={submit} aria-busy={status === "loading"}>
             <label htmlFor="habit">Describe it in your own words</label>
             <textarea id="habit" value={habitDescription} onChange={(event) => setHabitDescription(event.target.value)} maxLength={700} minLength={12} required placeholder="For example: I reach for my phone whenever work feels difficult, then lose an hour scrolling." />
 

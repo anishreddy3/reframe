@@ -1,9 +1,11 @@
 "use client";
 
 import { useState } from "react";
+import { requestJson } from "../lib/client-http";
+import type { AuthenticatedUser } from "../lib/types";
 
 type Props = {
-  user: { displayName: string; email: string; authMethod: "chatgpt" | "judge" | "development" };
+  user: AuthenticatedUser;
   checkinCount: number;
   onDeleted: () => void;
 };
@@ -17,9 +19,11 @@ export function AccountView({ user, checkinCount, onDeleted }: Props) {
     setDeleting(true);
     setError("");
     try {
-      const response = await fetch("/api/account", { method: "DELETE" });
-      const payload = (await response.json()) as { error?: string };
-      if (!response.ok) throw new Error(payload.error || "Could not delete your data.");
+      await requestJson<{ deleted: boolean }>(
+        "/api/account",
+        { method: "DELETE" },
+        "Could not delete your data.",
+      );
       onDeleted();
     } catch (cause) {
       setError(cause instanceof Error ? cause.message : "Could not delete your data.");
@@ -50,10 +54,10 @@ export function AccountView({ user, checkinCount, onDeleted }: Props) {
           <p className="eyebrow">Delete stored data</p>
           <h2 id="delete-title">Start over permanently</h2>
           <p>This removes your profile, generated plan, and every check-in from Reframe. It does not delete your ChatGPT account.</p>
-          <label htmlFor="delete-confirmation">Type <strong>DELETE</strong> to confirm</label>
-          <input id="delete-confirmation" value={confirmation} onChange={(event) => setConfirmation(event.target.value)} autoComplete="off" />
+          <label id="delete-instruction" htmlFor="delete-confirmation">Type <strong>DELETE</strong> to confirm</label>
+          <input id="delete-confirmation" value={confirmation} onChange={(event) => setConfirmation(event.target.value)} autoComplete="off" aria-describedby="delete-instruction" />
           {error && <p className="form-error" role="alert">{error}</p>}
-          <button className="danger-button" onClick={deleteData} disabled={confirmation !== "DELETE" || deleting}>{deleting ? "Deleting…" : "Delete all Reframe data"}</button>
+          <button type="button" className="danger-button" onClick={deleteData} disabled={confirmation !== "DELETE" || deleting} aria-busy={deleting}>{deleting ? "Deleting…" : "Delete all Reframe data"}</button>
         </section>
       </div>
     </>

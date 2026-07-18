@@ -2,6 +2,7 @@
 
 import { FormEvent, useState } from "react";
 import Link from "next/link";
+import { requestJson } from "../../lib/client-http";
 
 export default function JudgeAccess() {
   const [loading, setLoading] = useState(false);
@@ -13,16 +14,14 @@ export default function JudgeAccess() {
     setError("");
     const data = new FormData(event.currentTarget);
     try {
-      const response = await fetch("/api/judge-auth", {
+      await requestJson<{ authenticated: boolean }>("/api/judge-auth", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
           username: data.get("username"),
           password: data.get("password"),
         }),
-      });
-      const payload = (await response.json()) as { error?: string };
-      if (!response.ok) throw new Error(payload.error || "Evaluator sign-in failed.");
+      }, "Evaluator sign-in failed.");
       window.location.assign("/app");
     } catch (cause) {
       setError(cause instanceof Error ? cause.message : "Evaluator sign-in failed.");
@@ -31,13 +30,13 @@ export default function JudgeAccess() {
   }
 
   return (
-    <main className="judge-access-shell">
+    <main id="main-content" tabIndex={-1} className="judge-access-shell">
       <section className="judge-access-card" aria-labelledby="judge-access-title">
         <Link className="brand-lockup" href="/"><span className="brand-mark">R</span><span>reframe</span></Link>
         <p className="eyebrow">Temporary evaluation access</p>
         <h1 id="judge-access-title">Explore every workflow.</h1>
         <p>Use the credentials supplied in the project README. This login is reserved for judges and stores only evaluation data.</p>
-        <form onSubmit={submit}>
+        <form onSubmit={submit} aria-busy={loading}>
           <label htmlFor="judge-username">Evaluator username</label>
           <input id="judge-username" name="username" autoComplete="username" required />
           <label htmlFor="judge-password">Evaluator password</label>

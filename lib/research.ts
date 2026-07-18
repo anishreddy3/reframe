@@ -1,12 +1,46 @@
 import Exa from "exa-js";
-import type { ResearchSource } from "./types";
-import { cleanText, safeExternalUrl } from "./validation";
+import type { ResearchSource } from "./types.ts";
+import { cleanText, safeExternalUrl } from "./validation.ts";
 
 const cache = new Map<string, { expiresAt: number; results: ResearchSource[] }>();
 const THIRTY_MINUTES = 30 * 60 * 1000;
 
 function normalizeQuery(value: string) {
   return cleanText(value, 240).toLowerCase().replace(/[^a-z0-9\s-]/g, "").replace(/\s+/g, " ");
+}
+
+export type ResearchResultCandidate = {
+  title?: string | null;
+  url: string;
+  highlights?: string[] | null;
+  publishedDate?: string | null;
+};
+
+/** Converts Exa SDK results into the small, safe shape returned to browsers. */
+export function parseResearchResults(
+  candidates: readonly ResearchResultCandidate[],
+): ResearchSource[] {
+  return candidates.flatMap((candidate) => {
+    const url = safeExternalUrl(candidate.url);
+    if (!url) return [];
+
+    const title = cleanText(candidate.title, 220) || new URL(url).hostname;
+    const snippet = (candidate.highlights ?? [])
+      .filter((highlight): highlight is string => typeof highlight === "string")
+      .join(" ")
+      .replace(/\s+/g, " ")
+      .trim()
+      .slice(0, 700);
+
+    return [{
+      title,
+      url,
+      snippet,
+      publishedDate: typeof candidate.publishedDate === "string"
+        ? candidate.publishedDate
+        : undefined,
+    }];
+  });
 }
 
 export async function searchEvidence(ownerId: string, habitType: string, question: string): Promise<ResearchSource[]> {
@@ -25,12 +59,7 @@ export async function searchEvidence(ownerId: string, habitType: string, questio
       maxAgeHours: 72,
     },
   });
-  const results = response.results.flatMap((result) => {
-    const url = safeExternalUrl(result.url);
-    if (!url) return [];
-    const snippet = (result.highlights ?? []).join(" ").replace(/\s+/g, " ").trim().slice(0, 700);
-    return [{ title: result.title?.trim() || new URL(url).hostname, url, snippet, publishedDate: result.publishedDate }];
-  });
+  const results = parseResearchResults(response.results);
   cache.set(cacheKey, { expiresAt: Date.now() + THIRTY_MINUTES, results });
   return results;
 }

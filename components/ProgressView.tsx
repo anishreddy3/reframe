@@ -3,13 +3,16 @@ import type { Checkin, ProgressStats } from "../lib/types";
 export function ProgressView({ checkins, stats }: { checkins: Checkin[]; stats: ProgressStats }) {
   const ordered = [...checkins].sort((a, b) => a.checkinDate.localeCompare(b.checkinDate)).slice(-14);
   const maxUrges = Math.max(1, ...ordered.map((entry) => entry.urges));
+  const chartDescription = ordered
+    .map((entry) => `${entry.checkinDate}: ${entry.urges}`)
+    .join(", ");
 
   return (
     <div className="insights-grid">
       <section className="card chart-card">
         <div className="section-heading"><div><p className="eyebrow">Recorded, not estimated</p><h2>Urges over time</h2></div><span className="data-badge">{ordered.length} entries shown</span></div>
         {ordered.length ? (
-          <div className="bar-chart" role="img" aria-label={`Urge counts across ${ordered.length} stored check-ins`}>
+          <div className="bar-chart" role="img" aria-label={`Urge counts by date. ${chartDescription}`}>
             {ordered.map((entry) => (
               <div className="bar-column" key={entry.id} title={`${entry.checkinDate}: ${entry.urges} urges`}>
                 <span className="bar-value">{entry.urges}</span>

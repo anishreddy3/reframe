@@ -2,7 +2,7 @@ import Link from "next/link";
 
 export default function Home() {
   return (
-    <main className="access-choice-shell">
+    <main id="main-content" tabIndex={-1} className="access-choice-shell">
       <section className="access-choice-card" aria-labelledby="access-choice-title">
         <span className="brand-lockup"><span className="brand-mark">R</span><span>reframe</span></span>
         <p className="eyebrow">Private, personalized habit support</p>

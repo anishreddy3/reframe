@@ -11,8 +11,8 @@ export function EscalationCard({ escalation }: { escalation: Escalation }) {
       <p>{escalation.message}</p>
       <div className="resource-links">
         {escalation.resources.map((resource) => (
-          <a key={resource.url} href={resource.url} target="_blank" rel="noreferrer">
-            {resource.label} <span aria-hidden="true">↗</span>
+          <a key={resource.url} href={resource.url} target="_blank" rel="noopener noreferrer">
+            {resource.label} <span aria-hidden="true">↗</span><span className="sr-only"> (opens in a new tab)</span>
           </a>
         ))}
       </div>

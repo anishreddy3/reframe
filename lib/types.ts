@@ -39,3 +39,9 @@ export type ResearchSource = {
   snippet: string;
   publishedDate?: string;
 };
+
+export type AuthenticatedUser = {
+  displayName: string;
+  email: string;
+  authMethod: "chatgpt" | "judge" | "development";
+};

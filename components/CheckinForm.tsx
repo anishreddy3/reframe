@@ -1,9 +1,10 @@
 "use client";
 
 import { FormEvent, useState } from "react";
-import type { Checkin } from "../lib/types";
+import { requestJson } from "../lib/client-http";
+import type { Checkin, ProgressStats } from "../lib/types";
 
-type Props = { onSaved: (payload: { checkins: Checkin[]; stats: unknown }) => void };
+type Props = { onSaved: (payload: { checkins: Checkin[]; stats: ProgressStats }) => void };
 
 export function CheckinForm({ onSaved }: Props) {
   const [open, setOpen] = useState(false);
@@ -19,7 +20,10 @@ export function CheckinForm({ onSaved }: Props) {
     setNotice("");
     const data = new FormData(event.currentTarget);
     try {
-      const response = await fetch("/api/checkins", {
+      const payload = await requestJson<{
+        checkins?: Checkin[];
+        stats?: ProgressStats;
+      }>("/api/checkins", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
@@ -31,9 +35,7 @@ export function CheckinForm({ onSaved }: Props) {
           context: data.get("context"),
           timeOfDay: data.get("timeOfDay"),
         }),
-      });
-      const payload = (await response.json()) as { error?: string; checkins?: Checkin[]; stats?: unknown };
-      if (!response.ok || payload.error) throw new Error(payload.error || "Could not save check-in.");
+      }, "Could not save check-in.");
       if (!payload.checkins || !payload.stats) throw new Error("The saved check-in could not be reloaded.");
       onSaved({ checkins: payload.checkins, stats: payload.stats });
       setNotice("Check-in saved. This entry now shapes your trends and coaching context.");
@@ -53,10 +55,10 @@ export function CheckinForm({ onSaved }: Props) {
         <h2 id="checkin-title">How did today meet you?</h2>
         <p>There is no perfect day here. Logging what happened gives your coach something real to learn from.</p>
       </div>
-      {!open && <button className="primary-button compact" onClick={() => setOpen(true)}>Log today’s check-in <span aria-hidden="true">＋</span></button>}
+      {!open && <button type="button" className="primary-button compact" aria-expanded="false" aria-controls="daily-checkin-form" onClick={() => setOpen(true)}>Log today’s check-in <span aria-hidden="true">＋</span></button>}
       {notice && <p className="success-note" role="status">{notice}</p>}
       {open && (
-        <form className="checkin-form" onSubmit={submit}>
+        <form id="daily-checkin-form" className="checkin-form" onSubmit={submit} aria-busy={saving}>
           <div className="field-row">
             <label>Date<input name="date" type="date" defaultValue={today} max={today} required /></label>
             <label>Time of day<select name="timeOfDay" defaultValue="evening"><option value="morning">Morning</option><option value="afternoon">Afternoon</option><option value="evening">Evening</option><option value="late-night">Late night</option></select></label>

@@ -91,13 +91,14 @@ app/
   globals.css      Responsive visual system
   layout.tsx       Metadata and social sharing configuration
   page.tsx         Application entry point
-components/        Onboarding, check-in, coaching, and progress UI
+components/        Focused shell, navigation, onboarding, check-in, coaching, and progress UI
 db/
   core.ts          Testable D1 storage primitives
   repository.ts    Runtime database adapter
   schema.ts        Drizzle table definitions
 drizzle/            Generated D1 migration artifacts
 lib/
+  client-http.ts   Shared, tested browser request and error handling
   crisis.ts        Keyword and moderation safety checks
   openai-coach.ts  Coaching prompts and OpenAI requests
   progress.ts      Streak and trend calculations
@@ -105,7 +106,7 @@ lib/
   judge-auth.ts    Signed evaluator-cookie implementation
   research.ts      Exa search and per-user cache
   validation.ts    Input and URL sanitization
-tests/              Progress and storage tests
+tests/              Authentication, boundaries, progress, parsing, and storage tests
 worker/             Cloudflare Worker entry point
 ```
 
@@ -369,6 +370,16 @@ The application does not hide service failures:
 - Research results with unsafe URL protocols are discarded.
 - Empty Exa results display an honest no-results state.
 
+## Accessibility
+
+- Every page has a keyboard-visible skip link targeting a focusable main region.
+- Native buttons, links, fields, radio groups, headings, landmarks, and account disclosure controls preserve keyboard behavior and semantic roles.
+- Custom segmented controls expose visible focus rings, and all interactive elements receive high-contrast focus treatment.
+- Active application navigation uses `aria-current`, while live coaching, loading, success, and error states use appropriate live-region or busy semantics.
+- Charts include exact date-and-value text alternatives, not only visual bars.
+- Links that open a new tab announce that behavior to screen readers and use `noopener noreferrer`.
+- Reduced-motion preferences disable nonessential transitions and smooth scrolling.
+
 ## Testing and validation
 
 Run the automated tests:
@@ -385,6 +396,11 @@ The current suite verifies:
 - deterministic, case-insensitive identity hashing with no raw email in the owner key;
 - signed evaluator-cookie verification and tamper rejection;
 - per-owner database isolation and deletion that preserves other users’ records.
+- centralized client JSON success, error, and malformed-response handling;
+- free-text normalization, numeric bounds, and unsafe URL rejection;
+- Exa-result parsing, sanitization, fallback titles, and unsafe-source removal;
+- deterministic crisis escalation before ordinary coaching;
+- response redaction that prevents internal owner identifiers from reaching browsers.
 
 Run strict TypeScript checking:
 
@@ -430,7 +446,7 @@ Do not use a real crisis disclosure as test data. Use an obviously synthetic phr
 | `npm run dev` | Start the local vinext development server. |
 | `npm run build` | Create the production Cloudflare-compatible build. |
 | `npm run start` | Start the built application locally. |
-| `npm test` | Run calculation and storage tests. |
+| `npm test` | Run authentication, boundary, parsing, calculation, and storage tests. |
 | `npm run lint` | Run ESLint. |
 | `npm run db:generate` | Generate a new SQLite/D1 migration from the Drizzle schema. |
 

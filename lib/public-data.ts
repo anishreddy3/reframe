@@ -1,4 +1,4 @@
-import type { Checkin, Profile, StoredCheckin, StoredProfile } from "./types";
+import type { Checkin, Profile, StoredCheckin, StoredProfile } from "./types.ts";
 
 export function profileForClient(profile: StoredProfile): Profile {
   return {
