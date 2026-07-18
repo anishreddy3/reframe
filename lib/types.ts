@@ -1,5 +1,4 @@
 export type Profile = {
-  sessionId: string;
   habitDescription: string;
   severity: "mild" | "moderate" | "high";
   goal: "reduce" | "quit";
@@ -9,9 +8,10 @@ export type Profile = {
   updatedAt: string;
 };
 
+export type StoredProfile = Profile & { ownerId: string };
+
 export type Checkin = {
   id: string;
-  sessionId: string;
   checkinDate: string;
   urges: number;
   slipups: number;
@@ -21,6 +21,8 @@ export type Checkin = {
   timeOfDay: "morning" | "afternoon" | "evening" | "late-night";
   createdAt: string;
 };
+
+export type StoredCheckin = Checkin & { ownerId: string };
 
 export type ProgressStats = {
   streak: number;

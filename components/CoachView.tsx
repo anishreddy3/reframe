@@ -7,7 +7,7 @@ import { EscalationCard } from "./EscalationCard";
 type Message = { id: string; role: "user" | "coach"; content: string; model?: string };
 type Escalation = Parameters<typeof EscalationCard>[0]["escalation"];
 
-export function CoachView({ sessionId }: { sessionId: string }) {
+export function CoachView() {
   const [messages, setMessages] = useState<Message[]>([]);
   const [chatLoading, setChatLoading] = useState(false);
   const [chatError, setChatError] = useState("");
@@ -31,7 +31,7 @@ export function CoachView({ sessionId }: { sessionId: string }) {
       const response = await fetch("/api/chat", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ sessionId, message: input }),
+        body: JSON.stringify({ message: input }),
       });
       const data = (await response.json()) as { error?: string; escalation?: Escalation; reply?: string; model?: string };
       if (!response.ok || data.error) throw new Error(data.error || "Coach request failed.");
@@ -55,7 +55,7 @@ export function CoachView({ sessionId }: { sessionId: string }) {
       const response = await fetch("/api/research", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ sessionId, question }),
+        body: JSON.stringify({ question }),
       });
       const data = (await response.json()) as { error?: string; results?: ResearchSource[] };
       if (!response.ok || data.error) throw new Error(data.error || "Evidence search failed.");

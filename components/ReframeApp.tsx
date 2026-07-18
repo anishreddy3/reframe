@@ -2,47 +2,54 @@
 
 import { useEffect, useState } from "react";
 import type { Checkin, Profile, ProgressStats } from "../lib/types";
+import { AccountView } from "./AccountView";
 import { CheckinForm } from "./CheckinForm";
 import { CoachView } from "./CoachView";
 import { Onboarding } from "./Onboarding";
 import { ProgressView } from "./ProgressView";
 
 const EMPTY_STATS: ProgressStats = { streak: 0, averageUrges: 0, totalCheckins: 0, urgeTrend: "not-enough-data", topTriggers: [], topTimeOfDay: null };
+type View = "today" | "coach" | "insights" | "account";
+type User = { displayName: string; email: string; authMethod: "chatgpt" | "judge" | "development" };
 
-export function ReframeApp() {
-  const [sessionId, setSessionId] = useState("");
+export function ReframeApp({ user, signOutPath }: { user: User; signOutPath: string }) {
   const [profile, setProfile] = useState<Profile | null>(null);
   const [checkins, setCheckins] = useState<Checkin[]>([]);
   const [stats, setStats] = useState<ProgressStats>(EMPTY_STATS);
-  const [view, setView] = useState<"today" | "coach" | "insights">("today");
+  const [view, setView] = useState<View>("today");
   const [loading, setLoading] = useState(true);
   const [loadError, setLoadError] = useState("");
 
   useEffect(() => {
-    const stored = localStorage.getItem("reframe-session-id");
-    const id = stored && /^[a-zA-Z0-9_-]{12,80}$/.test(stored) ? stored : crypto.randomUUID();
-    localStorage.setItem("reframe-session-id", id);
-    setSessionId(id);
     Promise.all([
-      fetch(`/api/profile?sessionId=${encodeURIComponent(id)}`).then((response) => response.json() as Promise<{ error?: string; profile: Profile | null }>),
-      fetch(`/api/checkins?sessionId=${encodeURIComponent(id)}`).then((response) => response.json() as Promise<{ error?: string; checkins: Checkin[]; stats: ProgressStats }>),
+      fetch("/api/profile", { cache: "no-store" }).then(async (response) => ({ response, data: await response.json() as { error?: string; profile: Profile | null } })),
+      fetch("/api/checkins", { cache: "no-store" }).then(async (response) => ({ response, data: await response.json() as { error?: string; checkins: Checkin[]; stats: ProgressStats } })),
     ])
-      .then(([profileData, checkinData]) => {
-        if (profileData.error) throw new Error(profileData.error);
-        setProfile(profileData.profile);
-        if (!checkinData.error) {
-          setCheckins(checkinData.checkins);
-          setStats(checkinData.stats);
-        }
+      .then(([profileResult, checkinResult]) => {
+        if (!profileResult.response.ok || profileResult.data.error) throw new Error(profileResult.data.error || "Could not load your profile.");
+        if (!checkinResult.response.ok || checkinResult.data.error) throw new Error(checkinResult.data.error || "Could not load your check-ins.");
+        setProfile(profileResult.data.profile);
+        setCheckins(checkinResult.data.checkins);
+        setStats(checkinResult.data.stats);
       })
       .catch((cause) => setLoadError(cause instanceof Error ? cause.message : "Could not load Reframe."))
       .finally(() => setLoading(false));
   }, []);
 
-  if (loading || !sessionId) return <main className="loading-screen"><span className="brand-mark">R</span><p>Opening your private space…</p></main>;
-  if (!profile) return <><Onboarding sessionId={sessionId} onComplete={setProfile} />{loadError && <p className="global-error">{loadError}</p>}</>;
+  async function signOut() {
+    if (user.authMethod === "judge") {
+      await fetch("/api/judge-auth", { method: "DELETE" });
+      window.location.assign("/judge-access");
+      return;
+    }
+    window.location.assign(signOutPath);
+  }
 
-  const firstName = profile.habitType.split(/[\s/-]/)[0];
+  if (loading) return <main className="loading-screen"><span className="brand-mark">R</span><p>Opening your private space…</p></main>;
+  if (loadError) return <main className="loading-screen"><span className="brand-mark">R</span><p role="alert">{loadError}</p><button className="secondary-button compact" onClick={() => window.location.reload()}>Try again</button></main>;
+  if (!profile) return <Onboarding userDisplayName={user.displayName} onComplete={setProfile} onSignOut={signOut} />;
+
+  const initial = user.displayName.slice(0, 1).toUpperCase();
   return (
     <div className="app-shell">
       <header className="topbar">
@@ -50,7 +57,14 @@ export function ReframeApp() {
         <nav aria-label="Primary navigation">
           {(["today", "coach", "insights"] as const).map((item) => <button key={item} className={view === item ? "active" : ""} onClick={() => setView(item)}>{item === "today" ? "Today" : item === "coach" ? "Coach" : "My patterns"}</button>)}
         </nav>
-        <span className="profile-chip" title={`Working on ${profile.habitType}`}>{firstName.slice(0, 1).toUpperCase()}</span>
+        <details className="account-menu">
+          <summary aria-label={`Open account menu for ${user.displayName}`}><span className="profile-chip" aria-hidden="true">{initial}</span></summary>
+          <div className="account-popover">
+            <strong>{user.displayName}</strong><span>{user.email}</span>
+            <button onClick={(event) => { setView("account"); event.currentTarget.closest("details")?.removeAttribute("open"); }}>Account & privacy</button>
+            <button onClick={signOut}>Sign out</button>
+          </div>
+        </details>
       </header>
 
       <main id="main" className="main-content">
@@ -70,11 +84,12 @@ export function ReframeApp() {
               <p className="plan-text">{profile.startingPlan}</p>
               <span className="evidence-label">Generated from your onboarding details</span>
             </section>
-            <CheckinForm sessionId={sessionId} onSaved={(payload) => { setCheckins(payload.checkins); setStats(payload.stats as ProgressStats); }} />
+            <CheckinForm onSaved={(payload) => { setCheckins(payload.checkins); setStats(payload.stats as ProgressStats); }} />
           </>
         )}
-        {view === "coach" && <CoachView sessionId={sessionId} />}
+        {view === "coach" && <CoachView />}
         {view === "insights" && <><section className="page-heading"><p className="eyebrow">Your data, reflected back</p><h1>Patterns without judgment.</h1><p>Every number below is computed only from check-ins stored in your Reframe database.</p></section><ProgressView checkins={checkins} stats={stats} /></>}
+        {view === "account" && <AccountView user={user} checkinCount={checkins.length} onDeleted={() => { setProfile(null); setCheckins([]); setStats(EMPTY_STATS); setView("today"); }} />}
       </main>
       <footer><span>Reframe is a behavior-change companion, not medical care.</span><a href="https://findahelpline.com/" target="_blank" rel="noreferrer">Need human support? Find a helpline ↗</a></footer>
     </div>

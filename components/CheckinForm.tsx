@@ -3,9 +3,9 @@
 import { FormEvent, useState } from "react";
 import type { Checkin } from "../lib/types";
 
-type Props = { sessionId: string; onSaved: (payload: { checkins: Checkin[]; stats: unknown }) => void };
+type Props = { onSaved: (payload: { checkins: Checkin[]; stats: unknown }) => void };
 
-export function CheckinForm({ sessionId, onSaved }: Props) {
+export function CheckinForm({ onSaved }: Props) {
   const [open, setOpen] = useState(false);
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState("");
@@ -23,7 +23,6 @@ export function CheckinForm({ sessionId, onSaved }: Props) {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
-          sessionId,
           checkinDate: data.get("date"),
           urges: Number(data.get("urges")),
           slipups: Number(data.get("slipups")),

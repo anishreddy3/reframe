@@ -4,9 +4,9 @@ import { FormEvent, useState } from "react";
 import { EscalationCard } from "./EscalationCard";
 import type { Profile } from "../lib/types";
 
-type Props = { sessionId: string; onComplete: (profile: Profile) => void };
+type Props = { userDisplayName: string; onComplete: (profile: Profile) => void; onSignOut: () => void };
 
-export function Onboarding({ sessionId, onComplete }: Props) {
+export function Onboarding({ userDisplayName, onComplete, onSignOut }: Props) {
   const [habitDescription, setHabitDescription] = useState("");
   const [severity, setSeverity] = useState<Profile["severity"]>("moderate");
   const [goal, setGoal] = useState<Profile["goal"]>("reduce");
@@ -23,7 +23,7 @@ export function Onboarding({ sessionId, onComplete }: Props) {
       const response = await fetch("/api/profile", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ sessionId, habitDescription, severity, goal }),
+        body: JSON.stringify({ habitDescription, severity, goal }),
       });
       const data = (await response.json()) as { error?: string; escalation?: Parameters<typeof EscalationCard>[0]["escalation"]; profile?: Profile };
       if (!response.ok || data.error) throw new Error(data.error || "Onboarding failed.");
@@ -42,7 +42,7 @@ export function Onboarding({ sessionId, onComplete }: Props) {
 
   return (
     <main className="onboarding-shell">
-      <header className="brand-lockup"><span className="brand-mark">R</span><span>reframe</span></header>
+      <header className="onboarding-header"><span className="brand-lockup"><span className="brand-mark">R</span><span>reframe</span></span><span className="onboarding-account"><span className="signed-in-note">Signed in as {userDisplayName}</span><button onClick={onSignOut}>Sign out</button></span></header>
       <div className="onboarding-grid">
         <section className="onboarding-copy">
           <p className="eyebrow">Change the pattern, not who you are</p>

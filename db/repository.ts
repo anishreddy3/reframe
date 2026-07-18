@@ -1,6 +1,6 @@
 import { env } from "cloudflare:workers";
-import type { Checkin, Profile } from "../lib/types";
-import { getProfileFromDb, listCheckinsFromDb, saveCheckinToDb, saveProfileToDb } from "./core";
+import type { StoredCheckin, StoredProfile } from "../lib/types";
+import { deleteUserDataFromDb, getProfileFromDb, listCheckinsFromDb, saveCheckinToDb, saveProfileToDb } from "./core";
 
 function database(): D1Database {
   const binding = (env as unknown as { DB?: D1Database }).DB;
@@ -8,18 +8,22 @@ function database(): D1Database {
   return binding;
 }
 
-export function getProfile(sessionId: string): Promise<Profile | null> {
-  return getProfileFromDb(database(), sessionId);
+export function getProfile(ownerId: string): Promise<StoredProfile | null> {
+  return getProfileFromDb(database(), ownerId);
 }
 
-export function saveProfile(profile: Profile): Promise<Profile> {
+export function saveProfile(profile: StoredProfile): Promise<StoredProfile> {
   return saveProfileToDb(database(), profile);
 }
 
-export function saveCheckin(checkin: Checkin): Promise<Checkin> {
+export function saveCheckin(checkin: StoredCheckin): Promise<StoredCheckin> {
   return saveCheckinToDb(database(), checkin);
 }
 
-export function listCheckins(sessionId: string, limit = 30): Promise<Checkin[]> {
-  return listCheckinsFromDb(database(), sessionId, limit);
+export function listCheckins(ownerId: string, limit = 30): Promise<StoredCheckin[]> {
+  return listCheckinsFromDb(database(), ownerId, limit);
+}
+
+export function deleteUserData(ownerId: string): Promise<void> {
+  return deleteUserDataFromDb(database(), ownerId);
 }

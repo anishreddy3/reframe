@@ -1,7 +1,7 @@
 import { integer, sqliteTable, text } from "drizzle-orm/sqlite-core";
 
 export const profiles = sqliteTable("profiles", {
-  sessionId: text("session_id").primaryKey(),
+  ownerId: text("session_id").primaryKey(),
   habitDescription: text("habit_description").notNull(),
   severity: text("severity").notNull(),
   goal: text("goal").notNull(),
@@ -13,7 +13,7 @@ export const profiles = sqliteTable("profiles", {
 
 export const checkins = sqliteTable("checkins", {
   id: text("id").primaryKey(),
-  sessionId: text("session_id").notNull(),
+  ownerId: text("session_id").notNull(),
   checkinDate: text("checkin_date").notNull(),
   urges: integer("urges").notNull(),
   slipups: integer("slipups").notNull(),

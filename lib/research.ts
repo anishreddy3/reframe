@@ -9,10 +9,10 @@ function normalizeQuery(value: string) {
   return cleanText(value, 240).toLowerCase().replace(/[^a-z0-9\s-]/g, "").replace(/\s+/g, " ");
 }
 
-export async function searchEvidence(sessionId: string, habitType: string, question: string): Promise<ResearchSource[]> {
+export async function searchEvidence(ownerId: string, habitType: string, question: string): Promise<ResearchSource[]> {
   if (!process.env.EXA_API_KEY) throw new Error("EXA_API_KEY is not configured on the server.");
   const query = cleanText(`${habitType}: ${question} evidence-based behavior change psychology research reputable health source`, 300);
-  const cacheKey = `${sessionId}:${normalizeQuery(query)}`;
+  const cacheKey = `${ownerId}:${normalizeQuery(query)}`;
   const cached = cache.get(cacheKey);
   if (cached && cached.expiresAt > Date.now()) return cached.results;
 

@@ -5,7 +5,6 @@ import type { Checkin } from "../lib/types.ts";
 
 const makeCheckin = (date: string, urges: number, triggers: string[] = []): Checkin => ({
   id: date,
-  sessionId: "session_123456789",
   checkinDate: date,
   urges,
   slipups: 0,

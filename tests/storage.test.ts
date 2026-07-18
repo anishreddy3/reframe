@@ -1,7 +1,7 @@
 import assert from "node:assert/strict";
 import test from "node:test";
-import { listCheckinsFromDb, saveCheckinToDb, type D1Like } from "../db/core.ts";
-import type { Checkin } from "../lib/types.ts";
+import { deleteUserDataFromDb, listCheckinsFromDb, saveCheckinToDb, type D1Like } from "../db/core.ts";
+import type { StoredCheckin } from "../lib/types.ts";
 
 class FakeStatement {
   sql: string;
@@ -13,6 +13,12 @@ class FakeStatement {
     if (this.sql.startsWith("INSERT INTO checkins")) {
       const [id, session_id, checkin_date, urges, slipups, mood, triggers_json, context, time_of_day, created_at] = this.values;
       this.rows.push({ id, session_id, checkin_date, urges, slipups, mood, triggers_json, context, time_of_day, created_at });
+    }
+    if (this.sql.startsWith("DELETE FROM checkins")) {
+      const [ownerId] = this.values;
+      for (let index = this.rows.length - 1; index >= 0; index -= 1) {
+        if (this.rows[index].session_id === ownerId) this.rows.splice(index, 1);
+      }
     }
     return { success: true };
   }
@@ -32,13 +38,28 @@ class FakeDatabase {
 
 test("check-in storage round-trips trigger data through the repository", async () => {
   const database = new FakeDatabase() as unknown as D1Like;
-  const checkin: Checkin = {
-    id: "entry-1", sessionId: "session_123456789", checkinDate: "2026-07-18", urges: 4, slipups: 1,
+  const checkin: StoredCheckin = {
+    id: "entry-1", ownerId: "usr_owner_one", checkinDate: "2026-07-18", urges: 4, slipups: 1,
     mood: 3, triggers: ["stress", "bedtime"], context: "After a long day", timeOfDay: "late-night",
     createdAt: "2026-07-18T20:00:00.000Z",
   };
   await saveCheckinToDb(database, checkin);
-  const stored = await listCheckinsFromDb(database, checkin.sessionId, 10);
+  const stored = await listCheckinsFromDb(database, checkin.ownerId, 10);
   assert.equal(stored.length, 1);
   assert.deepEqual(stored[0], checkin);
+});
+
+test("database reads and deletion stay scoped to the authenticated owner", async () => {
+  const database = new FakeDatabase() as unknown as D1Like;
+  const base: Omit<StoredCheckin, "id" | "ownerId"> = {
+    checkinDate: "2026-07-18", urges: 2, slipups: 0, mood: 4, triggers: [], context: "",
+    timeOfDay: "morning", createdAt: "2026-07-18T08:00:00.000Z",
+  };
+  await saveCheckinToDb(database, { ...base, id: "owner-a-entry", ownerId: "usr_owner_a" });
+  await saveCheckinToDb(database, { ...base, id: "owner-b-entry", ownerId: "usr_owner_b" });
+
+  assert.deepEqual((await listCheckinsFromDb(database, "usr_owner_a", 10)).map((entry) => entry.id), ["owner-a-entry"]);
+  await deleteUserDataFromDb(database, "usr_owner_a");
+  assert.equal((await listCheckinsFromDb(database, "usr_owner_a", 10)).length, 0);
+  assert.deepEqual((await listCheckinsFromDb(database, "usr_owner_b", 10)).map((entry) => entry.id), ["owner-b-entry"]);
 });
