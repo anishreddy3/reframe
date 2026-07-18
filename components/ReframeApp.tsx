@@ -80,15 +80,6 @@ export function ReframeApp({
 
   async function signOut() {
     try {
-      if (user.authMethod === "judge") {
-        await requestJson<{ authenticated: boolean }>(
-          "/api/judge-auth",
-          { method: "DELETE" },
-          "Could not sign out.",
-        );
-        window.location.assign("/");
-        return;
-      }
       window.location.assign(signOutPath);
     } catch (cause) {
       setLoadError(cause instanceof Error ? cause.message : "Could not sign out.");

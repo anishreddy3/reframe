@@ -45,7 +45,7 @@ export function AccountView({ user, checkinCount, onDeleted }: Props) {
           <h2 id="identity-title">{user.displayName}</h2>
           <p>{user.email}</p>
           <dl>
-            <div><dt>Sign-in method</dt><dd>{user.authMethod === "chatgpt" ? "Sign in with ChatGPT" : user.authMethod === "judge" ? "Temporary evaluator access" : "Local development identity"}</dd></div>
+            <div><dt>Sign-in method</dt><dd>{user.authMethod === "chatgpt" ? "Sign in with ChatGPT" : "Local development identity"}</dd></div>
             <div><dt>Stored check-ins</dt><dd>{checkinCount}</dd></div>
           </dl>
           <a className="secondary-button account-download" href="/api/account?download=1">Download my data <span aria-hidden="true">↓</span></a>

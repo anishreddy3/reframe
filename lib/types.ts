@@ -43,5 +43,5 @@ export type ResearchSource = {
 export type AuthenticatedUser = {
   displayName: string;
   email: string;
-  authMethod: "chatgpt" | "judge" | "development";
+  authMethod: "chatgpt" | "development";
 };

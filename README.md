@@ -10,16 +10,6 @@ Production: [reframe-habit-companion.posimreddy-anishkuma.chatgpt.site](https://
 
 The hosted application uses production-only secret environment variables and a Cloudflare D1 database. Local `.env` files are separate from the hosted configuration.
 
-### Temporary judge access
-
-Evaluators can exercise the complete application without using a personal account:
-
-- URL: [reframe-habit-companion.posimreddy-anishkuma.chatgpt.site/judge-access](https://reframe-habit-companion.posimreddy-anishkuma.chatgpt.site/judge-access)
-- Username: `reframe-judge`
-- Password: `ReframeJudge-7K4M-26!`
-
-These credentials are intentionally published for challenge evaluation only. They create an expiring, signed, `HttpOnly` evaluator session and never expose the server’s cookie-signing secret. Regular users sign in with ChatGPT at the main production URL. The judge account is shared, so evaluators should use **Account & privacy → Delete all Reframe data** after testing if they want to leave it clean for the next reviewer.
-
 ## Core capabilities
 
 | Capability | Real implementation |
@@ -36,8 +26,8 @@ These credentials are intentionally published for challenge evaluation only. The
 
 ## User flow
 
-1. The public home page asks the visitor to choose **Regular user** or **Evaluator**.
-2. The hosted dispatcher authenticates a regular user with Sign in with ChatGPT, or the evaluator route verifies the temporary judge credentials and creates a signed cookie.
+1. The public home page introduces Reframe and links to the protected application.
+2. The hosted dispatcher authenticates the visitor with Sign in with ChatGPT.
 3. Every server request derives an opaque D1 owner key from the verified identity. The browser never chooses which user records are loaded.
 4. A new user describes a habit, selects its frequency, and chooses whether to reduce or quit.
 5. The server sanitizes the input and checks it for safety concerns.
@@ -85,8 +75,6 @@ app/
     profile/       Onboarding and profile retrieval
     research/      Exa evidence search
     account/       Authenticated export and deletion
-    judge-auth/    Temporary evaluator session endpoint
-  judge-access/    Evaluator login page
   chatgpt-auth.ts  Hosting-dispatcher identity integration
   globals.css      Responsive visual system
   layout.tsx       Metadata and social sharing configuration
@@ -103,7 +91,6 @@ lib/
   openai-coach.ts  Coaching prompts and OpenAI requests
   progress.ts      Streak and trend calculations
   authenticated-user.ts  Server-only identity-to-owner mapping
-  judge-auth.ts    Signed evaluator-cookie implementation
   research.ts      Exa search and per-user cache
   validation.ts    Input and URL sanitization
 tests/              Authentication, boundaries, progress, parsing, and storage tests
@@ -139,7 +126,7 @@ Local development does not have the hosted Sign in with ChatGPT dispatcher. Set 
    OPENAI_API_KEY=your_openai_api_key
    EXA_API_KEY=your_exa_api_key
    OPENAI_MODEL=gpt-5.6-sol
-   REFRAME_DEV_USER_EMAIL=evaluator@local.test
+   REFRAME_DEV_USER_EMAIL=developer@local.test
    ```
 
 4. Start the development server:
@@ -160,9 +147,6 @@ Local D1 state is managed by the Cloudflare development runtime and survives ord
 | `EXA_API_KEY` | Yes | None | Used for evidence-backed neural search. |
 | `OPENAI_MODEL` | No | `gpt-5.6-sol` | Overrides the Chat Completions model used for plans and coaching. |
 | `REFRAME_DEV_USER_EMAIL` | Local only | None | Supplies a development identity when the hosted authentication headers are unavailable. Ignored in production. |
-| `JUDGE_ACCESS_USERNAME` | Hosted judge access | None | Temporary evaluator username. |
-| `JUDGE_ACCESS_PASSWORD` | Hosted judge access | None | Temporary evaluator password. |
-| `JUDGE_SESSION_SECRET` | Hosted judge access | None | At least 32 random characters used only to sign expiring evaluator cookies. |
 
 These values must remain server-side. Never prefix them with `NEXT_PUBLIC_`, commit `.env.local`, place them in client code, or include them in `.openai/hosting.json`.
 
@@ -203,7 +187,7 @@ Tables and the check-in lookup index are created defensively at runtime. Generat
 
 ## API routes
 
-All routes accept and return JSON. Except for evaluator sign-in, every route requires an authenticated identity. Ownership values are derived on the server and never accepted in query strings or request bodies. Sensitive keys are read only inside server code.
+All routes accept and return JSON and require an authenticated identity. Ownership values are derived on the server and never accepted in query strings or request bodies. Sensitive keys are read only inside server code.
 
 ### `GET /api/profile`
 
@@ -275,17 +259,11 @@ Exports the authenticated user’s account label, profile, and check-ins as a JS
 
 Permanently deletes the authenticated user’s Reframe profile and check-ins. The UI requires the user to type `DELETE` before enabling this request.
 
-### `POST` and `DELETE /api/judge-auth`
-
-The `POST` endpoint verifies the configured temporary credentials and issues a seven-day HMAC-SHA-256 signed, `HttpOnly`, `SameSite=Lax`, `Secure` production cookie. `DELETE` expires that cookie. Invalid or tampered cookies are rejected and cannot select an arbitrary owner.
-
 ## Authentication and data isolation
 
 The primary authentication path is hosting-dispatcher-owned Sign in with ChatGPT. The application reads only the verified `oai-authenticated-user-*` request headers on the server. Protected page rendering redirects an unauthenticated visitor to the dispatcher’s sign-in route, and each API route independently rejects missing identity with HTTP `401`.
 
 For storage, the server normalizes the verified email and hashes it with SHA-256 into an opaque `usr_…` owner key. D1 queries always use that derived value. Client requests no longer contain a session ID, email, owner ID, or other database selector, and API responses strip the internal owner key.
-
-Temporary judge access is a deliberately narrow secondary path for challenge evaluation. Its credential values live in hosted secrets, its cookie is cryptographically signed and expires after seven days, and its data maps to a dedicated `judge@reframe.demo` owner. It does not weaken or impersonate Sign in with ChatGPT.
 
 ## AI behavior
 
@@ -394,7 +372,6 @@ The current suite verifies:
 - averages, trend classification, and trigger counting;
 - D1-compatible check-in storage and retrieval, including JSON trigger round-tripping.
 - deterministic, case-insensitive identity hashing with no raw email in the owner key;
-- signed evaluator-cookie verification and tamper rejection;
 - per-owner database isolation and deletion that preserves other users’ records.
 - centralized client JSON success, error, and malformed-response handling;
 - free-text normalization, numeric bounds, and unsafe URL rejection;
@@ -420,22 +397,20 @@ Regenerate migrations after schema changes:
 npm run db:generate
 ```
 
-### Manual evaluator walkthrough
+### Manual validation walkthrough
 
-1. Open the main production URL and confirm the Regular user / Evaluator chooser is visible without authentication.
-2. Choose Regular user and confirm `/app` redirects to Sign in with ChatGPT; return and choose Evaluator to open `/judge-access`.
-3. Enter the README evaluator credentials and confirm the app opens without exposing the password in browser storage or the URL.
-4. Start with an empty authenticated account and confirm the dashboard contains no fabricated data.
-5. Complete onboarding with a non-crisis sample habit and verify the returned classification and plan are personalized.
-6. Log a check-in and verify the streak, average urges, chart, triggers, and time-of-day pattern use the submitted values.
-7. Reload the page and verify the profile and check-in persist for the same identity.
-8. Ask the coach about a logged trigger and verify the response is labeled with the actual model identifier.
-9. Search for an evidence-based strategy, open returned source links, then repeat the query and verify the scoped cache is consistent.
-10. Open Account & privacy, download the JSON export, and verify it contains only the current account’s profile/check-ins and no internal owner key.
-11. Sign out and confirm the chooser returns. Visit `/app` directly and confirm protected access redirects to ChatGPT sign-in.
-12. Use clearly crisis-related synthetic test language and verify Reframe shows escalation resources instead of coaching.
-13. Type `DELETE` in Account & privacy, delete the data, and confirm onboarding is shown again while another account remains unaffected.
-14. Temporarily remove a development API key and verify the UI displays an error rather than a canned response.
+1. Open the main production URL and follow the Sign in with ChatGPT action.
+2. Start with an empty authenticated account and confirm the dashboard contains no fabricated data.
+3. Complete onboarding with a non-crisis sample habit and verify the returned classification and plan are personalized.
+4. Log a check-in and verify the streak, average urges, chart, triggers, and time-of-day pattern use the submitted values.
+5. Reload the page and verify the profile and check-in persist for the same identity.
+6. Ask the coach about a logged trigger and verify the response is labeled with the actual model identifier.
+7. Search for an evidence-based strategy, open returned source links, then repeat the query and verify the scoped cache is consistent.
+8. Open Account & privacy, download the JSON export, and verify it contains only the current account’s profile/check-ins and no internal owner key.
+9. Sign out, visit `/app` directly, and confirm protected access redirects to ChatGPT sign-in.
+10. Use clearly crisis-related synthetic test language and verify Reframe shows escalation resources instead of coaching.
+11. Type `DELETE` in Account & privacy, delete the data, and confirm onboarding is shown again while another account remains unaffected.
+12. Temporarily remove a development API key and verify the UI displays an error rather than a canned response.
 
 Do not use a real crisis disclosure as test data. Use an obviously synthetic phrase in an isolated development session.
 
@@ -462,12 +437,9 @@ The repository is configured for OpenAI Sites with:
 
 Production secrets must be created in the Sites environment as secret values. Updating `.env.local` does not update the published site. After secret or environment changes, redeploy the saved application version and confirm the deployment reports the new environment revision.
 
-The three judge-access variables are also deployed as secret values. Rotate `JUDGE_ACCESS_PASSWORD` and `JUDGE_SESSION_SECRET` after the evaluation window, update the credentials shown in this README, and redeploy. Rotating the session secret immediately invalidates all previously issued evaluator cookies.
-
 ## Current boundaries
 
 - Reframe is not a therapist, clinician, emergency service, or substitute for professional care.
-- The temporary judge account is shared for evaluation; regular users should use Sign in with ChatGPT for isolated, persistent ownership.
 - Chat history is intentionally ephemeral; only profiles and check-ins persist.
 - Research credibility is not automatically guaranteed by search rank. Users should inspect source authorship, methods, date, and applicability.
 - A single check-in can support an average and streak, but trend classification intentionally waits for at least four entries.

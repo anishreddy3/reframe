@@ -1,12 +1,11 @@
 import { headers } from "next/headers";
 import { redirect } from "next/navigation";
-import { judgeUserFromCookieHeader } from "../lib/judge-auth";
 
 export type ChatGPTUser = {
   displayName: string;
   email: string;
   fullName: string | null;
-  authMethod: "chatgpt" | "judge" | "development";
+  authMethod: "chatgpt" | "development";
 };
 
 const USER_EMAIL_HEADER = "oai-authenticated-user-email";
@@ -22,14 +21,6 @@ export async function getChatGPTUser(): Promise<ChatGPTUser | null> {
   const requestHeaders = await headers();
   const email = requestHeaders.get(USER_EMAIL_HEADER);
   if (!email) {
-    const judgeUser = await judgeUserFromCookieHeader(requestHeaders.get("cookie"));
-    if (judgeUser) {
-      return {
-        ...judgeUser,
-        fullName: judgeUser.displayName,
-        authMethod: "judge",
-      };
-    }
     const developmentEmail =
       process.env.NODE_ENV !== "production"
         ? process.env.REFRAME_DEV_USER_EMAIL?.trim()
@@ -37,9 +28,9 @@ export async function getChatGPTUser(): Promise<ChatGPTUser | null> {
     if (!developmentEmail) return null;
 
     return {
-      displayName: "Local evaluator",
+      displayName: "Local developer",
       email: developmentEmail,
-      fullName: "Local evaluator",
+      fullName: "Local developer",
       authMethod: "development",
     };
   }
