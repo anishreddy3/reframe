@@ -4,9 +4,7 @@ Reframe is a full-stack, GenAI-powered habit-change companion for people who wan
 
 The application does not ship with demo progress, canned coaching, fabricated research, or silent fallbacks. If a database or external API request fails, Reframe displays an error instead of substituting fake output.
 
-## Live application
-
-Production: [reframe-habit-companion.posimreddy-anishkuma.chatgpt.site](https://reframe-habit-companion.posimreddy-anishkuma.chatgpt.site)
+## Hosted environment
 
 The hosted application uses production-only secret environment variables and a Cloudflare D1 database. Local `.env` files are separate from the hosted configuration.
 
