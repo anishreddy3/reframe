@@ -13,7 +13,7 @@ export async function createStartingPlan(input: {
   severity: Profile["severity"];
   goal: Profile["goal"];
 }) {
-  const model = process.env.OPENAI_MODEL || "gpt-4o-mini";
+  const model = process.env.OPENAI_MODEL || "gpt-5.6-sol";
   const completion = await client().chat.completions.create({
     model,
     messages: [
@@ -36,7 +36,7 @@ export async function createStartingPlan(input: {
 }
 
 export async function createCoachReply(message: string, profile: Profile, recentCheckins: Checkin[]) {
-  const model = process.env.OPENAI_MODEL || "gpt-4o-mini";
+  const model = process.env.OPENAI_MODEL || "gpt-5.6-sol";
   const compactHistory = recentCheckins.slice(0, 10).map(({ checkinDate, urges, slipups, mood, triggers, context, timeOfDay }) => ({
     checkinDate,
     urges,

@@ -137,7 +137,7 @@ Local development does not have the hosted Sign in with ChatGPT dispatcher. Set 
    ```dotenv
    OPENAI_API_KEY=your_openai_api_key
    EXA_API_KEY=your_exa_api_key
-   OPENAI_MODEL=gpt-4o-mini
+   OPENAI_MODEL=gpt-5.6-sol
    REFRAME_DEV_USER_EMAIL=evaluator@local.test
    ```
 
@@ -157,7 +157,7 @@ Local D1 state is managed by the Cloudflare development runtime and survives ord
 | --- | --- | --- | --- |
 | `OPENAI_API_KEY` | Yes | None | Used for onboarding, coaching, and moderation. |
 | `EXA_API_KEY` | Yes | None | Used for evidence-backed neural search. |
-| `OPENAI_MODEL` | No | `gpt-4o-mini` | Overrides the Chat Completions model used for plans and coaching. |
+| `OPENAI_MODEL` | No | `gpt-5.6-sol` | Overrides the Chat Completions model used for plans and coaching. |
 | `REFRAME_DEV_USER_EMAIL` | Local only | None | Supplies a development identity when the hosted authentication headers are unavailable. Ignored in production. |
 | `JUDGE_ACCESS_USERNAME` | Hosted judge access | None | Temporary evaluator username. |
 | `JUDGE_ACCESS_PASSWORD` | Hosted judge access | None | Temporary evaluator password. |
